@@ -1,11 +1,12 @@
 const apikey = '3897a285-3821-4714-94f6-18f007d941bf';
 const apihost = 'https://todo-api.coderslab.pl';
 
-// Pobranie zadań z API
+// Pobranie zadań z API jako JSON
 
 function apiListTasks() {
   return fetch(
     apihost + '/api/tasks',
+
     {
       headers: { Authorization: apikey }
     }
@@ -20,6 +21,7 @@ function apiListTasks() {
 }
 
 //Renderowanie zadań na stronie
+// długa funkcja, wywołanie funkcji poniżej
 
 function renderTask(taskId, title, description, status) {
   const section = document.createElement('section');
@@ -67,9 +69,15 @@ function renderTask(taskId, title, description, status) {
   ul.className = 'list-group list-group-flush';
   section.appendChild(ul);
   // ...
-
-
-  // ...
+  apiListOperationsForTask(taskId).then(
+    function(response) {
+      response.data.forEach(
+        function(operation) {
+          renderOperation(ul, status, operation.id, operation.description, operation.timeSpent);
+        }
+      );
+    }
+  );
 
   // formularz dodawania nowych operacji chcemy widzieć tylko w otwartych zadaniach
   if(status == 'open') {
@@ -104,7 +112,7 @@ function renderTask(taskId, title, description, status) {
   }
 }
 
-
+//Przesłanie danych z backendu do funkcji renderTask
 document.addEventListener('DOMContentLoaded', function() {
   apiListTasks().then(
     function(response) {
@@ -117,21 +125,106 @@ document.addEventListener('DOMContentLoaded', function() {
   );
 });
 
-
-
-apiListTasks().then(
-  function(response) {
-      for (let i = 0; i < response.data.length; i++) {
-          console.log('Tytuł zadania: ', response.data[i].title);
-          if (response.data[i].description == ""){
-            console.log("opis: na razie brak opisu")
-          }
-          else {
-          console.log('opis: ', response.data[i].description);}
-          console.log(`status:  ${response.data[i].status}`);
-          // console.log(`data dodania:  ${response.data[i].addedDate}`);
+//operacje
+function apiListOperationsForTask(taskId) {
+  return fetch(
+    apihost + '/api/tasks/' + taskId + '/operations',
+    { headers: { 'Authorization': apikey } }
+  ).then(
+    function (resp) {
+      if(!resp.ok) {
+        alert('Wystąpił błąd! Otwórz devtools i zakładkę Sieć/Network, i poszukaj przyczyny');
       }
-  console.log(`Ilośc zadań:  ${response.data.length}`)
+      return resp.json();
+    }
+  );
+}
 
+//
+function renderOperation(ul, status, operationId, operationDescription, timeSpent) {
+  const li = document.createElement('li');
+  li.className = 'list-group-item d-flex justify-content-between align-items-center';
+  ul.appendChild(li);
+
+  const descriptionDiv = document.createElement('div');
+  descriptionDiv.innerText = operationDescription;
+  li.appendChild(descriptionDiv);
+
+  const time = document.createElement('span');
+  time.className = 'badge badge-success badge-pill ml-2';
+  time.innerText = formatTime(timeSpent);
+  descriptionDiv.appendChild(time);
+
+  // ...
+
+function renderOperation(ul, status, operationId, operationDescription, timeSpent) {
+  const li = document.createElement('li');
+  li.className = 'list-group-item d-flex justify-content-between align-items-center';
+  ul.appendChild(li);
+
+  const descriptionDiv = document.createElement('div');
+  descriptionDiv.innerText = operationDescription;
+  li.appendChild(descriptionDiv);
+
+  const time = document.createElement('span');
+  time.className = 'badge badge-success badge-pill ml-2';
+  time.innerText = formatTime(timeSpent);
+  descriptionDiv.appendChild(time);
+
+  if(status == "open") {
+    const controlDiv = document.createElement('div');
+    controlDiv.className = 'js-task-open-only';
+    li.appendChild(controlDiv);
+
+    const add15minButton = document.createElement('button');
+    add15minButton.className = 'btn btn-outline-success btn-sm mr-2';
+    add15minButton.innerText = '+15m';
+    controlDiv.appendChild(add15minButton);
+    // tu dodamy obsługę kliknięcia przycisku "+15m"
+
+    const add1hButton = document.createElement('button');
+    add1hButton.className = 'btn btn-outline-success btn-sm mr-2';
+    add1hButton.innerText = '+1h';
+    controlDiv.appendChild(add1hButton);
+    // tu dodamy obsługę kliknięcia przycisku "+1h"
+
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'btn btn-outline-danger btn-sm';
+    deleteButton.innerText = 'Delete';
+    controlDiv.appendChild(deleteButton);
+    // tu dodamy obsługę kliknięcia przycisku "Delete"
   }
-);
+}};
+
+function formatTime(timeSpent) {
+  const hours = Math.floor(timeSpent / 60);
+  const minutes = timeSpent % 60;
+  if(hours > 0) {
+    return hours + 'h ' + minutes + 'm';
+  } else {
+    return minutes + 'm';
+  }
+}
+
+
+
+
+
+
+// // moje consol logi
+// apiListTasks().then(
+//   function(response) {
+//       for (let i = 0; i < response.data.length; i++) {
+//           console.log('Tytuł zadania: ', response.data[i].title);
+//           if (response.data[i].description == ""){
+//             console.log("opis: na razie brak opisu")
+//           }
+//           else {
+//           console.log('opis: ', response.data[i].description);}
+//           console.log(`status:  ${response.data[i].status}`);
+//           // console.log(`data dodania:  ${response.data[i].addedDate}`);
+//       }
+//   console.log(`Ilośc zadań:  ${response.data.length}`)
+//
+//   }
+// );
